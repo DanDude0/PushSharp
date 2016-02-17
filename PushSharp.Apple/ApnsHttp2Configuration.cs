@@ -4,35 +4,28 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace PushSharp.Apple
 {
-    public class ApnsConfiguration
+    public class ApnsHttp2Configuration
     {
         #region Constants
-        const string APNS_SANDBOX_HOST = "gateway.sandbox.push.apple.com";
-        const string APNS_PRODUCTION_HOST = "gateway.push.apple.com";
+        const string APNS_SANDBOX_HOST = "api.development.push.apple.com";
+        const string APNS_PRODUCTION_HOST = "api.push.apple.com";
 
-        const string APNS_SANDBOX_FEEDBACK_HOST = "feedback.sandbox.push.apple.com";
-        const string APNS_PRODUCTION_FEEDBACK_HOST = "feedback.push.apple.com";
-
-        const int APNS_SANDBOX_PORT = 2195;
-        const int APNS_PRODUCTION_PORT = 2195;
-
-        const int APNS_SANDBOX_FEEDBACK_PORT = 2196;
-        const int APNS_PRODUCTION_FEEDBACK_PORT = 2196;
-
+        const uint APNS_SANDBOX_PORT = 443;
+        const uint APNS_PRODUCTION_PORT = 443;
         #endregion
 
-        public ApnsConfiguration (ApnsServerEnvironment serverEnvironment, string certificateFile, string certificateFilePwd)
+        public ApnsHttp2Configuration (ApnsServerEnvironment serverEnvironment, string certificateFile, string certificateFilePwd)
             : this (serverEnvironment, System.IO.File.ReadAllBytes (certificateFile), certificateFilePwd)
         {
         }
 
-        public ApnsConfiguration (ApnsServerEnvironment serverEnvironment, byte[] certificateData, string certificateFilePwd)
+        public ApnsHttp2Configuration (ApnsServerEnvironment serverEnvironment, byte[] certificateData, string certificateFilePwd)
             : this (serverEnvironment, new X509Certificate2 (certificateData, certificateFilePwd,
                 X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet | X509KeyStorageFlags.Exportable))
         {
         }
 
-        public ApnsConfiguration (string overrideHost, int overridePort, bool skipSsl = true)
+        public ApnsHttp2Configuration (string overrideHost, uint overridePort, bool skipSsl = true)
         {
             SkipSsl = skipSsl;
 
@@ -41,7 +34,7 @@ namespace PushSharp.Apple
             OverrideServer (overrideHost, overridePort);
         }
 
-        public ApnsConfiguration (ApnsServerEnvironment serverEnvironment, X509Certificate2 certificate)
+        public ApnsHttp2Configuration (ApnsServerEnvironment serverEnvironment, X509Certificate2 certificate)
         {
             Initialize (serverEnvironment, certificate);
         }
@@ -51,9 +44,7 @@ namespace PushSharp.Apple
             var production = serverEnvironment == ApnsServerEnvironment.Production;
 
             Host = production ? APNS_PRODUCTION_HOST : APNS_SANDBOX_HOST;
-            FeedbackHost = production ? APNS_PRODUCTION_FEEDBACK_HOST : APNS_SANDBOX_FEEDBACK_HOST;
             Port = production ? APNS_PRODUCTION_PORT : APNS_SANDBOX_PORT;
-            FeedbackPort = production ? APNS_PRODUCTION_FEEDBACK_PORT : APNS_SANDBOX_FEEDBACK_PORT;
 
             Certificate = certificate;
 
@@ -89,8 +80,7 @@ namespace PushSharp.Apple
 
                 if (!issuerName.Contains ("Apple"))
                     throw new ApnsConnectionException ("Your Certificate does not appear to be issued by Apple!  Please check to ensure you have the correct certificate!");
-                if (!commonName.Contains ("Apple Push Services:")
-                    && !commonName.Contains ("Website Push ID:"))
+                if (!commonName.Contains ("Apple Push Services:"))
                     throw new ApnsConnectionException ("Your Certificate is not in the new combined Sandbox/Production APNS certificate format, please create a new single certificate to use");
 
             } else {
@@ -98,25 +88,15 @@ namespace PushSharp.Apple
             }
         }
 
-        public void OverrideServer (string host, int port)
+        public void OverrideServer (string host, uint port)
         {
             Host = host;
             Port = port;
         }
 
-        public void OverrideFeedbackServer (string host, int port)
-        {
-            FeedbackHost = host;
-            FeedbackPort = port;
-        }
-
         public string Host { get; private set; }
 
-        public int Port { get; private set; }
-
-        public string FeedbackHost { get; private set; }
-
-        public int FeedbackPort { get; private set; }
+        public uint Port { get; private set; }
 
         public X509Certificate2 Certificate { get; private set; }
 
